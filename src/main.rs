@@ -163,7 +163,7 @@ async fn backrun_simple(tx_to_backrun: H256, to: H160) {
                 can_revert: false,
             },
         ];
-        let block = RPC_CLIENT.get_block_number().await?;
+        let block = PROGRESS.get_latest_block().await;
         let bundle = SendBundleRequest {
             bundle_body,
             inclusion: Inclusion {
@@ -204,11 +204,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let mut stream = client.subscribe_blocks().await?;
         while let Some(Block {
             hash: Some(hash),
+            number: Some(number),
             timestamp,
             ..
         }) = stream.next().await
         {
-            println!("Got block: {:?} at {:?}", hash, timestamp);
+            println!("Got block {}: {:?} at {:?}", number, hash, timestamp);
+            PROGRESS.set_latest_block(number).await;
 
             if let Some(block) = RPC_CLIENT.get_block_with_txs(hash).await? {
                 block.transactions.iter().for_each(|tx| {

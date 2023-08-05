@@ -4,7 +4,7 @@ use std::{
     sync::Arc,
 };
 
-use ethers_core::types::H160;
+use ethers_core::types::{H160, U64};
 use ethers_signers::Signer;
 use tokio::sync::RwLock;
 
@@ -14,13 +14,18 @@ use crate::WALLET;
 pub struct Progress {
     pub inner: Arc<RwLock<HashMap<H160, HashSet<H160>>>>,
     pub processing: Arc<RwLock<HashSet<H160>>>,
+    pub latest_block: Arc<RwLock<U64>>,
 }
+
+unsafe impl Send for Progress {}
+unsafe impl Sync for Progress {}
 
 impl Progress {
     pub fn new() -> Self {
         Self {
             inner: Arc::new(RwLock::new(HashMap::new())),
             processing: Arc::new(RwLock::new(HashSet::new())),
+            latest_block: Arc::new(RwLock::new(U64::zero())),
         }
     }
 
@@ -28,7 +33,16 @@ impl Progress {
         Self {
             inner: Arc::new(RwLock::new(read_ctf_progress().unwrap())),
             processing: Arc::new(RwLock::new(HashSet::new())),
+            latest_block: Arc::new(RwLock::new(U64::zero())),
         }
+    }
+
+    pub async fn get_latest_block(&self) -> U64 {
+        *self.latest_block.read().await
+    }
+
+    pub async fn set_latest_block(&self, block: U64) {
+        *self.latest_block.write().await = block;
     }
 
     pub async fn save(&self) {
@@ -68,9 +82,6 @@ impl Progress {
         self.save().await;
     }
 }
-
-unsafe impl Send for Progress {}
-unsafe impl Sync for Progress {}
 
 pub fn read_ctf_progress() -> Result<HashMap<H160, HashSet<H160>>, Box<dyn Error>> {
     let data = std::fs::read_to_string("ctf_progress.json").unwrap_or_else(|_| "{}".to_string());

@@ -72,10 +72,19 @@ lazy_static! {
         H160::from_str("0x20a1a5857fdff817aa1bd8097027a841d4969aa5").unwrap();
     pub static ref SIMPLE_CONTRACT_4: H160 =
         H160::from_str("0x98997b55bb271e254bec8b85763480719dab0e53").unwrap();
+    pub static ref MAGIC_CONTRACT_1: H160 =
+        H160::from_str("0x118bcb654d9a7006437895b51b5cd4946bf6cdc2").unwrap();
+    pub static ref MAGIC_CONTRACT_2: H160 =
+        H160::from_str("0x9be957d1c1c1f86ba9a2e1215e9d9eefde615a56").unwrap();
+    pub static ref MAGIC_CONTRACT_3: H160 =
+        H160::from_str("0xe8b7475e2790409715af793f799f3cc80de6f071").unwrap();
     pub static ref CONTRACTS: HashSet<H160> = HashSet::from_iter(vec![
         *SIMPLE_CONTRACT_1,
         *SIMPLE_CONTRACT_2,
         *SIMPLE_CONTRACT_3,
         *SIMPLE_CONTRACT_4,
+        *MAGIC_CONTRACT_1,
+        *MAGIC_CONTRACT_2,
+        *MAGIC_CONTRACT_3,
     ]);
 }

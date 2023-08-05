@@ -7,14 +7,15 @@ use futures_util::StreamExt;
 
 use crate::{
     constants::{
-        CONTRACTS, EVENT_CLIENT, PROGRESS, RPC_CLIENT, SIMPLE_CONTRACT_1, SIMPLE_CONTRACT_2,
-        SIMPLE_CONTRACT_4, SSE, WALLET, WS_URL,
+        CONTRACTS, EVENT_CLIENT, MAGIC_CONTRACT_1, MAGIC_CONTRACT_2, MAGIC_CONTRACT_3, PROGRESS,
+        RPC_CLIENT, SIMPLE_CONTRACT_1, SIMPLE_CONTRACT_2, SIMPLE_CONTRACT_4, SSE, WALLET, WS_URL,
     },
     handler::backrun_simple,
 };
 
 pub mod client;
 pub mod constants;
+pub mod contracts;
 pub mod error;
 pub mod handler;
 pub mod progress;
@@ -96,15 +97,31 @@ async fn main() -> Result<(), Box<dyn Error>> {
             });
 
             event.logs.iter().for_each(|log| {
-            let log = log.clone();
-            tokio::spawn(async move {
-                if log.address == *SIMPLE_CONTRACT_4
-                    && log.topics.get(0).map(|t| *t == H256::from_str("0x59d3ce47d6ad6c6003cef97d136155b29d88653eb355c8bed6e03fbf694570ca").unwrap()).unwrap_or_default()
-                {
-                    backrun_simple(event.hash, log.address).await
-                }
+                let log = log.clone();
+                let event = event.clone();
+                tokio::spawn(async move {
+                    if log.address == *SIMPLE_CONTRACT_4
+                        && log.topics.get(0).map(|t| *t == H256::from_str("0x59d3ce47d6ad6c6003cef97d136155b29d88653eb355c8bed6e03fbf694570ca").unwrap()).unwrap_or_default()
+                    {
+                        backrun_simple(event.hash, log.address).await
+                    }
+
+                    if log.address == *MAGIC_CONTRACT_1 {
+                        println!("Found Magic 1 Bundle: {:?}", log);
+                        dbg!(&event);
+                    }
+
+                    if log.address == *MAGIC_CONTRACT_2 {
+                        println!("Found Magic 2 Bundle: {:?}", log);
+                        dbg!(&event);
+                    }
+
+                    if log.address == *MAGIC_CONTRACT_3 {
+                        println!("Found Magic 3 Bundle: {:?}", log);
+                        dbg!(&event);
+                    }
+                });
             });
-        });
         }
 
         Result::<(), Box<dyn Error + Send + Sync>>::Ok(())

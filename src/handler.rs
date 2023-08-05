@@ -11,6 +11,8 @@ use crate::constants::{
     RPC_CLIENT, TIP, WALLET,
 };
 
+//pub async fn backrun_magic_numba(tx_to_backrun: H256, to: H160, )
+
 pub async fn backrun_simple(tx_to_backrun: H256, to: H160) {
     backrun_handler(tx_to_backrun, to, |nonce| async move {
         let tx = Eip1559TransactionRequest::new()
@@ -46,7 +48,7 @@ async fn backrun_handler<
     items: F,
 ) {
     if PROGRESS.get_progress_for_address(to).await {
-        println!("Skipping address {}: Already processed", to);
+        //println!("Skipping address {}: Already processed", to);
         return;
     }
 

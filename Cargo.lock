@@ -1756,7 +1756,7 @@ dependencies = [
 [[package]]
 name = "mev-share"
 version = "0.1.4"
-source = "git+https://github.com/paradigmxyz/mev-share-rs.git#fcc32b76c4069d17ebd76cb03ed88df164f715db"
+source = "git+https://github.com/y-pakorn/mev-share-rs.git#ea2a429ad2eba1557e600cc408d29b91b4e6c9aa"
 dependencies = [
  "mev-share-rpc-api",
  "mev-share-sse",
@@ -1792,7 +1792,7 @@ dependencies = [
 [[package]]
 name = "mev-share-rpc-api"
 version = "0.1.4"
-source = "git+https://github.com/paradigmxyz/mev-share-rs.git#fcc32b76c4069d17ebd76cb03ed88df164f715db"
+source = "git+https://github.com/y-pakorn/mev-share-rs.git#ea2a429ad2eba1557e600cc408d29b91b4e6c9aa"
 dependencies = [
  "async-trait",
  "ethers-core",
@@ -1808,7 +1808,7 @@ dependencies = [
 [[package]]
 name = "mev-share-sse"
 version = "0.1.4"
-source = "git+https://github.com/paradigmxyz/mev-share-rs.git#fcc32b76c4069d17ebd76cb03ed88df164f715db"
+source = "git+https://github.com/y-pakorn/mev-share-rs.git#ea2a429ad2eba1557e600cc408d29b91b4e6c9aa"
 dependencies = [
  "async-sse",
  "bytes",

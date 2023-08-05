@@ -1,0 +1,37 @@
+[package]
+name = "mev-share-ctf-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+## mev-share
+mev-share = { version = "0.1.4", git = "https://github.com/paradigmxyz/mev-share-rs.git" }
+mev-share-sse = { version = "0.1.4", git = "https://github.com/paradigmxyz/mev-share-rs.git" }
+mev-share-rpc-api = { version = "0.1.4", git = "https://github.com/paradigmxyz/mev-share-rs.git" }
+
+## eth
+ethers-core = { version = "2.0.8", default-features = false }
+ethers-signers = "2.0.8"
+ethers-contract = "2.0.8"
+ethers-providers = { version = "2.0.8", features = ["ws"] }
+
+## net
+http = "0.2.9"
+tower = "0.4"
+hyper = "0.14"
+
+## async
+futures-util = "0.3"
+async-trait = "0.1"
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+tracing = "0.1"
+
+tokio = "1.18"
+jsonrpsee = { version = "0.18", features = ["http-client"] }
+lazy_static = "1.4.0"
+rayon = "1.7.0"
+dotenv = "0.15.0"
+thiserror = "1.0.44"

@@ -8,7 +8,7 @@ use ethers_core::types::{H160, U64};
 use ethers_signers::Signer;
 use tokio::sync::RwLock;
 
-use crate::WALLET;
+use crate::constants::WALLET;
 
 #[derive(Debug, Clone)]
 pub struct Progress {

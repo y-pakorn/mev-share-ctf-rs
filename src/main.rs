@@ -100,10 +100,11 @@ lazy_static! {
     ]);
 }
 
-const MAX_GAS_PRICE: u128 = 3500;
-const MAX_PRIORITY_FEE: u128 = 2500;
+const MAX_GAS_PRICE: u128 = 100;
+const MAX_PRIORITY_FEE: u128 = 100;
 const GAS_LIMIT: u128 = 500000;
 const GWEI: u128 = 1000000000;
+const TIP: u128 = 100 * GWEI;
 
 struct Client {
     pub inner: Box<dyn MevApiClient + Sync + Send>,
@@ -143,12 +144,12 @@ async fn backrun_simple(tx_to_backrun: H256, to: H160) {
             .data(Bytes::from_str("0xb88a802f").unwrap())
             .chain_id(5)
             .nonce(nonce)
-            .max_priority_fee_per_gas(MAX_PRIORITY_FEE * GWEI)
-            .max_fee_per_gas(MAX_GAS_PRICE * GWEI)
+            .max_priority_fee_per_gas(MAX_PRIORITY_FEE * GWEI + TIP)
+            .max_fee_per_gas(MAX_GAS_PRICE * GWEI + TIP)
             .gas(GAS_LIMIT);
         let signature = WALLET.sign_transaction(&tx.clone().into()).await?;
         let bytes = tx.rlp_signed(&signature);
-        let bytes = Bytes::from_str(&format!(
+        let new_bytes = Bytes::from_str(&format!(
             "0x02{}",
             bytes.to_string().split("0x").collect::<Vec<&str>>()[1]
         ))
@@ -159,7 +160,7 @@ async fn backrun_simple(tx_to_backrun: H256, to: H160) {
                 hash: tx_to_backrun,
             },
             BundleItem::Tx {
-                tx: bytes,
+                tx: new_bytes,
                 can_revert: false,
             },
         ];

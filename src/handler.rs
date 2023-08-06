@@ -1,38 +1,78 @@
 use std::{error::Error, str::FromStr};
 
-use ethers_core::types::{Bytes, Eip1559TransactionRequest, H160, H256, U256};
+use ethers_core::{
+    abi::{RawLog, Token},
+    types::{Bytes, Eip1559TransactionRequest, H160, H256, U256},
+};
 use ethers_providers::Middleware;
 use ethers_signers::Signer;
 use futures_util::Future;
 use mev_share_rpc_api::{BundleItem, Inclusion, SendBundleRequest};
 
-use crate::constants::{
-    BUNDLE_BLOCK_WINDOW, GAS_LIMIT, GWEI, MAX_GAS_PRICE, MAX_PRIORITY_FEE, PROGRESS, RELAY_CLIENT,
-    RPC_CLIENT, TIP, WALLET,
+use crate::{
+    constants::{BUNDLE_BLOCK_WINDOW, PROGRESS, RELAY_CLIENT, RPC_CLIENT, WALLET},
+    contracts::MAGIC_NUMBER_ABI,
+    signer::sign_transaction,
 };
 
-//pub async fn backrun_magic_numba(tx_to_backrun: H256, to: H160, )
+pub async fn backrun_magic_numba(tx_to_backrun: H256, to: H160, bound_data: &Bytes) {
+    backrun_handler(tx_to_backrun, to, async move {
+        let nonce = RPC_CLIENT
+            .get_transaction_count(WALLET.address(), None)
+            .await?;
+
+        let mut bounds = MAGIC_NUMBER_ABI
+            .event("Activate")?
+            .parse_log(RawLog {
+                topics: vec![H256::from_str(
+                    "0x86a27c2047f889fafe51029e28e24f466422abe8a82c0c27de4683dda79a0b5d",
+                )?],
+                data: bound_data.to_vec(),
+            })?
+            .params
+            .into_iter();
+        let lower_b = bounds.next().unwrap().value.into_uint().unwrap();
+        let upper_b = bounds.next().unwrap().value.into_uint().unwrap();
+
+        let mut i = 0;
+        let mut magic_number = lower_b;
+        let mut bundle = vec![];
+        while magic_number <= upper_b {
+            magic_number += U256::one();
+            i += 1;
+            let tx_body = Bytes::from(
+                MAGIC_NUMBER_ABI
+                    .function("claimReward")?
+                    .encode_input(&[Token::Uint(magic_number)])?,
+            );
+            let tx = Eip1559TransactionRequest::new()
+                .to(to)
+                .data(tx_body)
+                .nonce(nonce + i);
+            let bytes = sign_transaction(tx).await?;
+            bundle.push(BundleItem::Tx {
+                tx: bytes,
+                can_revert: false,
+            });
+        }
+
+        Ok(bundle)
+    })
+    .await;
+}
 
 pub async fn backrun_simple(tx_to_backrun: H256, to: H160) {
-    backrun_handler(tx_to_backrun, to, |nonce| async move {
+    backrun_handler(tx_to_backrun, to, async move {
+        let nonce = RPC_CLIENT
+            .get_transaction_count(WALLET.address(), None)
+            .await?;
         let tx = Eip1559TransactionRequest::new()
-            .from(WALLET.address())
             .to(to)
-            .data(Bytes::from_str("0xb88a802f").unwrap())
-            .chain_id(5)
-            .nonce(nonce)
-            .max_priority_fee_per_gas(MAX_PRIORITY_FEE * GWEI + TIP)
-            .max_fee_per_gas(MAX_GAS_PRICE * GWEI + TIP)
-            .gas(GAS_LIMIT);
-        let signature = WALLET.sign_transaction(&tx.clone().into()).await?;
-        let bytes = tx.rlp_signed(&signature);
-        let new_bytes = Bytes::from_str(&format!(
-            "0x02{}",
-            bytes.to_string().split("0x").collect::<Vec<&str>>()[1]
-        ))
-        .unwrap();
+            .data(Bytes::from_str("0xb88a802f")?)
+            .nonce(nonce);
+        let bytes = sign_transaction(tx).await?;
         Ok(vec![BundleItem::Tx {
-            tx: new_bytes,
+            tx: bytes,
             can_revert: false,
         }])
     })
@@ -41,11 +81,10 @@ pub async fn backrun_simple(tx_to_backrun: H256, to: H160) {
 
 async fn backrun_handler<
     O: Future<Output = Result<Vec<BundleItem>, Box<dyn Error + Send + Sync>>>,
-    F: Fn(U256) -> O,
 >(
     tx_to_backrun: H256,
     to: H160,
-    items: F,
+    items: O,
 ) {
     if PROGRESS.get_progress_for_address(to).await {
         //println!("Skipping address {}: Already processed", to);
@@ -67,10 +106,7 @@ async fn backrun_handler<
         let mut bundle_body = vec![BundleItem::Hash {
             hash: tx_to_backrun,
         }];
-        let nonce = RPC_CLIENT
-            .get_transaction_count(WALLET.address(), None)
-            .await?;
-        bundle_body.append(&mut items(nonce).await?.to_vec());
+        bundle_body.append(&mut items.await?.to_vec());
         let block = PROGRESS.get_latest_block().await;
         let bundle = SendBundleRequest {
             bundle_body,

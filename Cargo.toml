@@ -7,9 +7,9 @@ edition = "2021"
 
 [dependencies]
 ## mev-share
-mev-share = { version = "0.1.4", git = "https://github.com/y-pakorn/mev-share-rs.git" }
-mev-share-sse = { version = "0.1.4", git = "https://github.com/y-pakorn/mev-share-rs.git" }
-mev-share-rpc-api = { version = "0.1.4", git = "https://github.com/y-pakorn/mev-share-rs.git" }
+mev-share = { version = "0.1.4", git = "https://github.com/paradigmxyz/mev-share-rs.git" }
+mev-share-sse = { version = "0.1.4", git = "https://github.com/paradigmxyz/mev-share-rs.git" }
+mev-share-rpc-api = { version = "0.1.4", git = "https://github.com/paradigmxyz/mev-share-rs.git" }
 
 ## eth
 ethers-core = { version = "2.0.8", default-features = false }

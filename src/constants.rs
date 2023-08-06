@@ -18,7 +18,7 @@ pub const MAX_GAS_PRICE: u128 = 100;
 pub const MAX_PRIORITY_FEE: u128 = 100;
 pub const GAS_LIMIT: u128 = 500000;
 pub const GWEI: u128 = 1000000000;
-pub const TIP: u128 = 100 * GWEI;
+pub const TIP: u128 = 10 * GWEI;
 
 pub const BUNDLE_BLOCK_WINDOW: u64 = 5;
 
@@ -72,6 +72,8 @@ lazy_static! {
         H160::from_str("0x20a1a5857fdff817aa1bd8097027a841d4969aa5").unwrap();
     pub static ref SIMPLE_CONTRACT_4: H160 =
         H160::from_str("0x98997b55bb271e254bec8b85763480719dab0e53").unwrap();
+    pub static ref SIMPLE_CONTRACT_TRIPLE: H160 =
+        H160::from_str("0x1ea6fb65bab1f405f8bdb26d163e6984b9108478").unwrap();
     pub static ref MAGIC_CONTRACT_1: H160 =
         H160::from_str("0x118bcb654d9a7006437895b51b5cd4946bf6cdc2").unwrap();
     pub static ref MAGIC_CONTRACT_2: H160 =
@@ -83,6 +85,7 @@ lazy_static! {
         *SIMPLE_CONTRACT_2,
         *SIMPLE_CONTRACT_3,
         *SIMPLE_CONTRACT_4,
+        *SIMPLE_CONTRACT_TRIPLE,
         *MAGIC_CONTRACT_1,
         *MAGIC_CONTRACT_2,
         *MAGIC_CONTRACT_3,

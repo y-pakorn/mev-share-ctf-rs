@@ -8,9 +8,10 @@ use futures_util::StreamExt;
 use crate::{
     constants::{
         CONTRACTS, EVENT_CLIENT, MAGIC_CONTRACT_1, MAGIC_CONTRACT_2, MAGIC_CONTRACT_3, PROGRESS,
-        RPC_CLIENT, SIMPLE_CONTRACT_1, SIMPLE_CONTRACT_2, SIMPLE_CONTRACT_4, SSE, WALLET, WS_URL,
+        RPC_CLIENT, SIMPLE_CONTRACT_1, SIMPLE_CONTRACT_2, SIMPLE_CONTRACT_4,
+        SIMPLE_CONTRACT_TRIPLE, SSE, WALLET, WS_URL,
     },
-    handler::{backrun_magic_numba, backrun_simple},
+    handler::{backrun_magic_numba, backrun_simple, backrun_simple_triple},
 };
 
 pub mod client;
@@ -107,6 +108,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         backrun_simple(event.hash, log.address).await
                     }
 
+                    if log.address == *SIMPLE_CONTRACT_TRIPLE
+                        && log.topics.get(0).map(|t| *t == H256::from_str("0x59d3ce47d6ad6c6003cef97d136155b29d88653eb355c8bed6e03fbf694570ca").unwrap()).unwrap_or_default()
+                    {
+                        backrun_simple_triple(event.hash, log.address).await
+                    }
+
                     if log.address == *MAGIC_CONTRACT_1 && log.topics.get(0).map(|t| *t == H256::from_str("0x86a27c2047f889fafe51029e28e24f466422abe8a82c0c27de4683dda79a0b5d").unwrap()).unwrap_or_default() {
                         backrun_magic_numba(event.hash, log.address, &log.data).await
                     }
@@ -118,6 +125,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     if log.address == *MAGIC_CONTRACT_3 && log.topics.get(0).map(|t| *t == H256::from_str("0x86a27c2047f889fafe51029e28e24f466422abe8a82c0c27de4683dda79a0b5d").unwrap()).unwrap_or_default() {
                         backrun_magic_numba(event.hash, log.address, &log.data).await
                     }
+
                 });
             });
         }

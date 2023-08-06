@@ -66,6 +66,28 @@ pub async fn backrun_magic_numba(tx_to_backrun: H256, to: H160, bound_data: &Byt
     }
 }
 
+pub async fn backrun_simple_triple(tx_to_backrun: H256, to: H160) {
+    backrun_handler(tx_to_backrun, to, async move {
+        let nonce = RPC_CLIENT
+            .get_transaction_count(WALLET.address(), None)
+            .await?;
+        let mut bundle = vec![];
+        for i in 0..3 {
+            let tx = Eip1559TransactionRequest::new()
+                .to(to)
+                .data(Bytes::from_str("0xb88a802f")?)
+                .nonce(nonce + i);
+            let bytes = sign_transaction(tx).await?;
+            bundle.push(BundleItem::Tx {
+                tx: bytes,
+                can_revert: false,
+            });
+        }
+        Ok(bundle)
+    })
+    .await
+}
+
 pub async fn backrun_simple(tx_to_backrun: H256, to: H160) {
     backrun_handler(tx_to_backrun, to, async move {
         let nonce = RPC_CLIENT

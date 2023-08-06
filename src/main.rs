@@ -8,7 +8,7 @@ use futures_util::StreamExt;
 use crate::{
     constants::{
         CONTRACTS, EVENT_CLIENT, MAGIC_CONTRACT_1, MAGIC_CONTRACT_2, MAGIC_CONTRACT_3, PROGRESS,
-        RPC_CLIENT, SIMPLE_CONTRACT_1, SIMPLE_CONTRACT_2, SIMPLE_CONTRACT_4,
+        RPC_CLIENT, SIMPLE_CONTRACT_1, SIMPLE_CONTRACT_2, SIMPLE_CONTRACT_3, SIMPLE_CONTRACT_4,
         SIMPLE_CONTRACT_TRIPLE, SSE, WALLET, WS_URL,
     },
     handler::{backrun_magic_numba, backrun_simple, backrun_simple_triple},
@@ -63,6 +63,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         println!("Subscribed to {}", stream.endpoint());
 
         while let Some(Ok(event)) = stream.next().await {
+            if event.logs.is_empty() && event.transactions.is_empty() {
+                backrun_simple(event.hash, *SIMPLE_CONTRACT_3).await
+            }
+
             event.transactions.iter().for_each(|tx| {
                 let tx = tx.clone();
                 tokio::spawn(async move {
@@ -89,10 +93,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             .unwrap_or_default()
                         && tx.calldata.is_none()
                     {
-                        backrun_simple(event.hash, tx.to.unwrap()).await
-                    }
-
-                    if tx.to.is_none() && tx.function_selector.is_none() && tx.calldata.is_none() {
                         backrun_simple(event.hash, tx.to.unwrap()).await
                     }
                 });

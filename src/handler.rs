@@ -16,7 +16,7 @@ use crate::{
 };
 
 pub async fn backrun_magic_numba(tx_to_backrun: H256, to: H160, bound_data: &Bytes) {
-    backrun_handler(tx_to_backrun, to, async move {
+    if let Err(err) = async {
         let nonce = RPC_CLIENT
             .get_transaction_count(WALLET.address(), None)
             .await?;
@@ -34,31 +34,36 @@ pub async fn backrun_magic_numba(tx_to_backrun: H256, to: H160, bound_data: &Byt
         let lower_b = bounds.next().unwrap().value.into_uint().unwrap();
         let upper_b = bounds.next().unwrap().value.into_uint().unwrap();
 
-        let mut i = 0;
         let mut magic_number = lower_b;
-        let mut bundle = vec![];
         while magic_number <= upper_b {
             magic_number += U256::one();
-            i += 1;
-            let tx_body = Bytes::from(
-                MAGIC_NUMBER_ABI
-                    .function("claimReward")?
-                    .encode_input(&[Token::Uint(magic_number)])?,
-            );
-            let tx = Eip1559TransactionRequest::new()
-                .to(to)
-                .data(tx_body)
-                .nonce(nonce + i);
-            let bytes = sign_transaction(tx).await?;
-            bundle.push(BundleItem::Tx {
-                tx: bytes,
-                can_revert: false,
+            tokio::spawn(async move {
+                backrun_handler(tx_to_backrun, to, async move {
+                    let tx_body = Bytes::from(
+                        MAGIC_NUMBER_ABI
+                            .function("claimReward")?
+                            .encode_input(&[Token::Uint(magic_number)])?,
+                    );
+                    let tx = Eip1559TransactionRequest::new()
+                        .to(to)
+                        .data(tx_body)
+                        .nonce(nonce);
+                    let bytes = sign_transaction(tx).await?;
+                    Ok(vec![BundleItem::Tx {
+                        tx: bytes,
+                        can_revert: false,
+                    }])
+                })
+                .await;
             });
         }
 
-        Ok(bundle)
-    })
-    .await;
+        Result::<(), Box<dyn Error + Send + Sync>>::Ok(())
+    }
+    .await
+    {
+        println!("Error getting nonce: {:?}", err);
+    }
 }
 
 pub async fn backrun_simple(tx_to_backrun: H256, to: H160) {
@@ -91,18 +96,13 @@ async fn backrun_handler<
         return;
     }
 
-    if PROGRESS.get_is_processing(to).await {
-        println!("Skipping address {}: Still processing", to);
-        return;
-    }
-
     println!(
         "Processing transaction to {:?} backrunning {:?}!",
         to, tx_to_backrun
     );
     PROGRESS.set_is_processing(to, true).await;
 
-    let process = async {
+    if let Err(e) = async {
         let mut bundle_body = vec![BundleItem::Hash {
             hash: tx_to_backrun,
         }];
@@ -122,11 +122,8 @@ async fn backrun_handler<
 
         Result::<(), Box<dyn Error + Send + Sync>>::Ok(())
     }
-    .await;
-
-    if let Err(e) = process {
+    .await
+    {
         println!("Error processing address {}: {:?}", to, e);
     }
-
-    PROGRESS.set_is_processing(to, false).await;
 }

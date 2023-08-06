@@ -38,7 +38,11 @@ pub async fn backrun_create_contract_salt(tx_to_backrun: H256, to: H160, data: &
             .value
             .into_fixed_bytes()
             .unwrap();
-        let addr = ethers_core::utils::get_create2_address(to, salt, *NEW_CONTRACT_INIT_CODE_HASH);
+        let addr = ethers_core::utils::get_create2_address_from_hash(
+            to,
+            salt,
+            *NEW_CONTRACT_INIT_CODE_HASH,
+        );
         let tx = Eip1559TransactionRequest::new()
             .to(addr)
             .data(Bytes::from_str("0xb88a802f")?)

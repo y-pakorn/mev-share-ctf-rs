@@ -1,6 +1,11 @@
 use std::{collections::HashSet, str::FromStr};
 
-use ethers_core::{k256::ecdsa::SigningKey, rand::thread_rng, types::H160};
+use ethers_core::{
+    k256::ecdsa::SigningKey,
+    rand::thread_rng,
+    types::{Bytes, H160, H256},
+    utils::keccak256,
+};
 use ethers_providers::Provider;
 use ethers_signers::{LocalWallet, Signer, Wallet};
 use jsonrpsee::http_client::{transport, HttpClientBuilder};
@@ -80,6 +85,11 @@ lazy_static! {
         H160::from_str("0x9be957d1c1c1f86ba9a2e1215e9d9eefde615a56").unwrap();
     pub static ref MAGIC_CONTRACT_3: H160 =
         H160::from_str("0xe8b7475e2790409715af793f799f3cc80de6f071").unwrap();
+    pub static ref NEW_CONTRACT_CONTRACT: H160 =
+        H160::from_str("0x5ea0fea0164e5aa58f407debb344876b5ee10dea").unwrap();
+    pub static ref NEW_CONTRACT_INIT_CODE_HASH: H256 = {
+        H256(keccak256(Bytes::from_str("0x60a060405233608052436000556080516101166100266000396000606f01526101166000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c806396b81609146037578063b88a802f146051575b600080fd5b603f60005481565b60405190815260200160405180910390f35b60576059565b005b4360005414606657600080fd5b600080819055507f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663720ecf456040518163ffffffff1660e01b8152600401600060405180830381600087803b15801560c757600080fd5b505af115801560da573d6000803e3d6000fd5b5050505056fea26469706673582212207a00db890eff47285ac0d9c9b8735727d476952aa87b45ee82fd6bb4f42c6fa764736f6c63430008130033").unwrap()))
+    };
     pub static ref CONTRACTS: HashSet<H160> = HashSet::from_iter(vec![
         *SIMPLE_CONTRACT_1,
         *SIMPLE_CONTRACT_2,

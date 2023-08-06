@@ -10,10 +10,80 @@ use futures_util::Future;
 use mev_share_rpc_api::{BundleItem, Inclusion, SendBundleRequest};
 
 use crate::{
-    constants::{BUNDLE_BLOCK_WINDOW, PROGRESS, RELAY_CLIENT, RPC_CLIENT, WALLET},
-    contracts::MAGIC_NUMBER_ABI,
+    constants::{
+        BUNDLE_BLOCK_WINDOW, NEW_CONTRACT_INIT_CODE_HASH, PROGRESS, RELAY_CLIENT, RPC_CLIENT,
+        WALLET,
+    },
+    contracts::{MAGIC_NUMBER_ABI, NEW_CONTRACT_ABI},
     signer::sign_transaction,
 };
+
+pub async fn backrun_create_contract_salt(tx_to_backrun: H256, to: H160, data: &Bytes) {
+    backrun_handler(tx_to_backrun, to, async move {
+        let nonce = RPC_CLIENT
+            .get_transaction_count(WALLET.address(), None)
+            .await?;
+        let salt = NEW_CONTRACT_ABI
+            .event("ActivateBySalt")?
+            .parse_log(RawLog {
+                topics: vec![H256::from_str(
+                    "0x71fd33d3d871c60dc3d6ecf7c8e5bb086aeb6491528cce181c289a411582ff1c",
+                )?],
+                data: data.to_vec(),
+            })?
+            .params
+            .into_iter()
+            .next()
+            .unwrap()
+            .value
+            .into_fixed_bytes()
+            .unwrap();
+        let addr = ethers_core::utils::get_create2_address(to, salt, *NEW_CONTRACT_INIT_CODE_HASH);
+        let tx = Eip1559TransactionRequest::new()
+            .to(addr)
+            .data(Bytes::from_str("0xb88a802f")?)
+            .nonce(nonce);
+        let bytes = sign_transaction(tx).await?;
+        Ok(vec![BundleItem::Tx {
+            tx: bytes,
+            can_revert: false,
+        }])
+    })
+    .await;
+}
+
+pub async fn backrun_create_contract_addr(tx_to_backrun: H256, to: H160, data: &Bytes) {
+    backrun_handler(tx_to_backrun, to, async move {
+        let nonce = RPC_CLIENT
+            .get_transaction_count(WALLET.address(), None)
+            .await?;
+        let addr = NEW_CONTRACT_ABI
+            .event("Activate")?
+            .parse_log(RawLog {
+                topics: vec![H256::from_str(
+                    "0xf7e9fe69e1d05372bc855b295bc4c34a1a0a5882164dd2b26df30a26c1c8ba15",
+                )?],
+                data: data.to_vec(),
+            })?
+            .params
+            .into_iter()
+            .next()
+            .unwrap()
+            .value
+            .into_address()
+            .unwrap();
+        let tx = Eip1559TransactionRequest::new()
+            .to(addr)
+            .data(Bytes::from_str("0xb88a802f")?)
+            .nonce(nonce);
+        let bytes = sign_transaction(tx).await?;
+        Ok(vec![BundleItem::Tx {
+            tx: bytes,
+            can_revert: false,
+        }])
+    })
+    .await;
+}
 
 pub async fn backrun_magic_numba(tx_to_backrun: H256, to: H160, bound_data: &Bytes) {
     if let Err(err) = async {

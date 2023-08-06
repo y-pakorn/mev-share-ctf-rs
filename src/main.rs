@@ -51,9 +51,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         let to = *to;
                         tokio::spawn(async move {
                             if CONTRACTS.contains(&to) && tx.from == WALLET.address() {
-                                if to == *NEW_CONTRACT_CONTRACT {
-                                    return;
-                                }
                                 println!("Found tx sent: {:?}", tx.hash);
                                 PROGRESS.add_progress_for_address(to).await;
                             }
